@@ -76,5 +76,34 @@ def delete_post(post_id):
     return jsonify({"message": f"Post with id {post_id} has been deleted successfully."}), 200
 
 
+@app.route('/api/posts/<int:post_id>', methods=['PUT'])
+def update_post(post_id):
+    """
+    Update a blog post by its ID.
+    :param post_id: (int) The ID of the post tu update.
+    Input:
+        JSON object with the following structure:
+        {
+            "title": "<new_title>",
+            "content": "<new content>"
+        }
+    :return:
+        JSON object with the updated post details or an error message.
+        - Status 200 OK: Post updated successfully.
+        - Status 404 Not Found: If the post with the given ID does not exist.
+    """
+    post_to_update = next((post for post in POSTS if post['id'] == post_id), None)
+    if post_to_update is None:
+        return jsonify({"error": f"Post with id {post_id} not found."}), 404
+
+    data = request.get_json()
+
+    # Update only provided fields, keep old values otherwise
+    post_to_update["title"] = data.get("title", post_to_update["title"])
+    post_to_update["content"] = data.get("content", post_to_update["content"])
+
+    return jsonify(post_to_update), 200
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5002, debug=True)
