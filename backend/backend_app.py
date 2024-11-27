@@ -19,6 +19,28 @@ def get_posts():
     return jsonify(POSTS)
 
 
+@app.route('/api/posts/search', methods=['GET'])
+def search_posts():
+    """
+    Searches for blog posts by title and/or content.
+    Query Parameters:
+        - title: The title to search for.
+        - content: The content to search for.
+    :return: A list of posts where the title or content matches the search term.
+    """
+    # Get the search parameters from the request
+    title_query = request.args.get('title', '').lower() # default to empty string if not provided
+    content_query = request.args.get('content', '').lower()
+
+    # Filter posts based on title or content
+    filtered_posts = [
+        post for post in POSTS
+        if title_query in post['title'].lower() or content_query in post['content'].lower()
+    ]
+
+    return jsonify(filtered_posts)
+
+
 @app.route('/api/posts', methods=['POST'])
 def add_post():
     """
