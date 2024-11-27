@@ -1,22 +1,23 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
 
 POSTS = [
-    {"id": 1, "title": "First post", "content": "This is the first post."},
-    {"id": 2, "title": "Second post", "content": "This is the second post."},
+    {"id": 1, "title": "First post", "content": "This is the first post", "author": "Sara Black", "date": "2023-05-20"},
+    {"id": 2, "title": "Second post", "content": "This is the second post.", "author": "Jane Smith", "date": "2023-06-25"},
 ]
 
 
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
     """
-    Return the list of all blog posts, optionally sorted by title or content.
+    Return the list of all blog posts, optionally sorted by title, content, author, or date.
 
     Query parameters:
-        - sort: The field tp sort by, can be "title" or "content".
+        - sort: The field tp sort by, can be "title", "content", "author", or "date".
         - direction: The sort order, can be "asc" for ascending or "desc" for descending.
 
     If no sort parameters are provided, the posts are returned in their original order.
@@ -26,8 +27,9 @@ def get_posts():
     direction = request.args.get('direction', '').lower()
 
     # Validate sort_field and direction
-    if sort_field and sort_field not in ['title', 'content']:
-        return jsonify({"error": "Invalid sort field. Must be 'title' or 'content'."}), 400
+    valid_sort_fields = ['title', 'content', 'author', 'date']
+    if sort_field and sort_field not in valid_sort_fields:
+        return jsonify({"error": f"Invalid sort field. Must be one of {valid_sort_fields}."}), 400
 
     if direction and direction not in ['asc', 'desc']:
         return jsonify({"error": "Invalid direction. Must be 'asc' or 'desc'."}), 400
@@ -35,32 +37,39 @@ def get_posts():
     # Sort the posts if sort and direction are provided
     if sort_field and direction:
         reverse = direction == 'desc'
-        POSTS.sort(key=lambda post: post[sort_field].lower(), reverse=reverse)
+
+        # Handle date sorting by converting date string to datetime object
+        if sort_field == 'date':
+            POSTS.sort(key=lambda post: datetime.strptime(post[sort_field], "%Y-%m-%d"), reverse=reverse)
+        else:
+            POSTS.sort(key=lambda post: post[sort_field].lower(), reverse=reverse)
 
     # return the posts
-    return jsonify(POSTS)
+    return jsonify(POSTS), 200
 
 
 @app.route('/api/posts/search', methods=['GET'])
 def search_posts():
     """
-    Searches for blog posts by title and/or content based on query parameters.
-    Query Parameters:
-        - title: The title to search for.
-        - content: The content to search for.
+    Searches for blog posts by title, content, author, or date based on query parameters.
     :return: A list of posts where the title or content matches the search term.
     """
     # Get the search parameters from the request
     title_query = request.args.get('title', '').lower()  # default to empty string if not provided
     content_query = request.args.get('content', '').lower()
+    author_query = request.args.get('author', '').lower()
+    date_query = request.args.get('date', '')
 
     # Filter posts based on title or content
     filtered_posts = [
-        post for post in POSTS
-        if title_query in post['title'].lower() or content_query in post['content'].lower()
-    ]
+        post for post in POSTS if (
+            title_query in post['title'].lower() or
+            content_query in post['content'].lower() or
+            author_query in post['author'].lower() or
+            date_query in post['date']
+        )]
 
-    return jsonify(filtered_posts)
+    return jsonify(filtered_posts), 200
 
 
 @app.route('/api/posts', methods=['POST'])
@@ -70,6 +79,8 @@ def add_post():
     The endpoint expects a JSON object in the request body with the keys:
         - title: The title of the new post (required).
         - content: The content of the new post (required).
+        - author: The author of the new post.
+        - date: The date of the new post.
     :return:
         - A JSON object representing the newly added post with a unique ID.
         - A 400 Bad Request error if title or content is missing.
@@ -78,20 +89,25 @@ def add_post():
     data = request.get_json()
 
     # Input validation
-    if not data or not data.get("title") or not data.get("content"):
-        return jsonify({"error": "Both 'title' amd 'content' are required."}), 400
+    if not data or not data.get("title") or not data.get("content") or not data.get('author') or not data.get('date'):
+        return jsonify({"message": "Missing required fields."}), 400
 
-    # Generate a unique ID
-    new_id = max(post['id'] for post in POSTS) + 1 if POSTS else 1
+    try:
+        # ensure the date is in the correct format
+        datetime.strptime(data['date'], "%Y-%m-%d")
+    except ValueError:
+        return jsonify({"message": "Invalid date format, use YYYY-MM-DD"}), 400
 
     # Create the new post
     new_post = {
-        "id": new_id,
+        "id": len(POSTS) + 1,
         "title": data["title"],
         "content": data["content"],
+        "author": data['author'],
+        "date": data['date']
     }
-    POSTS.append(new_post)
 
+    POSTS.append(new_post)
     # Return the new post with a 201 Created status
     return jsonify(new_post), 201
 
@@ -123,14 +139,7 @@ def delete_post(post_id):
 @app.route('/api/posts/<int:post_id>', methods=['PUT'])
 def update_post(post_id):
     """
-    Update a blog post by its ID.
-    :param post_id: (int) The ID of the post tu update.
-    Input:
-        JSON object with the following structure:
-        {
-            "title": "<new_title>",
-            "content": "<new content>"
-        }
+    Update an existing blog post. Only 'title', 'content', 'author', and 'date' are allowed.
     :return:
         JSON object with the updated post details or an error message.
         - Status 200 OK: Post updated successfully.
@@ -142,9 +151,20 @@ def update_post(post_id):
 
     data = request.get_json()
 
-    # Update only provided fields, keep old values otherwise
-    post_to_update["title"] = data.get("title", post_to_update["title"])
-    post_to_update["content"] = data.get("content", post_to_update["content"])
+    # Update fields if present in the request
+    if 'title' in data:
+        post_to_update['title'] = data['title']
+    if 'content' in data:
+        post_to_update['content'] = data['content']
+    if 'author' in data:
+        post_to_update['author'] = data['author']
+    if 'date' in data:
+        try:
+            # Ensure the data is in the correct format
+            datetime.strptime(data['date'], "%Y-%m-%d")
+            post_to_update['date'] = data['date']
+        except ValueError:
+            return jsonify({"message": "Invalid date format, use YYYY-MM-DD"}), 400
 
     return jsonify(post_to_update), 200
 
