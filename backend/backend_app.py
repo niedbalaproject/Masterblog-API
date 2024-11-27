@@ -13,23 +13,45 @@ POSTS = [
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
     """
-    Retrieve all blog posts.
-    :return: A JSON response containing the list of all blog posts.
+    Return the list of all blog posts, optionally sorted by title or content.
+
+    Query parameters:
+        - sort: The field tp sort by, can be "title" or "content".
+        - direction: The sort order, can be "asc" for ascending or "desc" for descending.
+
+    If no sort parameters are provided, the posts are returned in their original order.
     """
+    # Get the sort and direction parameters from the request
+    sort_field = request.args.get('sort', '').lower()  # default to empty string if not provided
+    direction = request.args.get('direction', '').lower()
+
+    # Validate sort_field and direction
+    if sort_field and sort_field not in ['title', 'content']:
+        return jsonify({"error": "Invalid sort field. Must be 'title' or 'content'."}), 400
+
+    if direction and direction not in ['asc', 'desc']:
+        return jsonify({"error": "Invalid direction. Must be 'asc' or 'desc'."}), 400
+
+    # Sort the posts if sort and direction are provided
+    if sort_field and direction:
+        reverse = direction == 'desc'
+        POSTS.sort(key=lambda post: post[sort_field].lower(), reverse=reverse)
+
+    # return the posts
     return jsonify(POSTS)
 
 
 @app.route('/api/posts/search', methods=['GET'])
 def search_posts():
     """
-    Searches for blog posts by title and/or content.
+    Searches for blog posts by title and/or content based on query parameters.
     Query Parameters:
         - title: The title to search for.
         - content: The content to search for.
     :return: A list of posts where the title or content matches the search term.
     """
     # Get the search parameters from the request
-    title_query = request.args.get('title', '').lower() # default to empty string if not provided
+    title_query = request.args.get('title', '').lower()  # default to empty string if not provided
     content_query = request.args.get('content', '').lower()
 
     # Filter posts based on title or content
