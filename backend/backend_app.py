@@ -1,14 +1,10 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
+from helper_functions import read_posts, write_posts
 
 app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
-
-POSTS = [
-    {"id": 1, "title": "First post", "content": "This is the first post.", "author": "Alice", "date": "2023-06-01"},
-    {"id": 2, "title": "Second post", "content": "This is the second post.", "author": "Bob", "date": "2023-06-02"},
-]
 
 
 @app.route('/api/posts', methods=['GET'])
@@ -22,6 +18,9 @@ def get_posts():
 
     If no sort parameters are provided, the posts are returned in their original order.
     """
+
+    posts = read_posts()
+
     # Get the sort and direction parameters from the request
     sort_field = request.args.get('sort', '').lower()  # default to empty string if not provided
     direction = request.args.get('direction', '').lower()
@@ -36,12 +35,12 @@ def get_posts():
     # Sort the posts if sort and direction are provided
     if sort_field and direction:
         if sort_field == 'date':
-            POSTS.sort(key=lambda post: datetime.strptime(post['date'], '%Y-%m-%d'), reverse=True)
+            posts.sort(key=lambda post: datetime.strptime(post['date'], '%Y-%m-%d'), reverse=(direction == 'desc'))
         else:
-            POSTS.sort(key=lambda post: post[sort_field].lower(), reverse=True)
+            posts.sort(key=lambda post: post[sort_field].lower(), reverse=(direction == 'desc'))
 
     # return the posts
-    return jsonify(POSTS)
+    return jsonify(posts)
 
 
 @app.route('/api/posts/search', methods=['GET'])
@@ -55,6 +54,7 @@ def search_posts():
         - date: The date to search for.
     :return: A list of posts where the title, content, author, or date matches the search term.
     """
+    posts = read_posts()
     # Get the search parameters from the request
     title_query = request.args.get('title', '').lower()  # default to empty string if not provided
     content_query = request.args.get('content', '').lower()
@@ -63,7 +63,7 @@ def search_posts():
 
     # Filter posts based on title, content, author, or date
     filtered_posts = [
-        post for post in POSTS
+        post for post in posts
         if title_query in post['title'].lower() or
         content_query in post['content'].lower() or
         author_query in post['author'].lower() or
@@ -100,18 +100,37 @@ def add_post():
     if not title or not content:
         return jsonify({"error": "Missing required data: title, or content."}), 400
 
+    posts = read_posts()
+
     # Create the new post
     new_post = {
-        "id": max(post["id"] for post in POSTS) + 1 if POSTS else 1,
+        "id": max(post["id"] for post in posts) + 1 if posts else 1,
         "title": title,
         "content": content,
         "author": author,
         "date": date
     }
-    POSTS.append(new_post)
+    posts.append(new_post)
+    write_posts(posts)
 
     # Return the new post with a 201 Created status
     return jsonify(new_post), 201
+
+
+@app.route('/api/posts/<int:post_id>', methods=['GET'])
+def get_single_post(post_id):
+    """
+    Get a single blog post by its ID.
+    """
+    posts = read_posts()
+
+    # Find the post by its ID
+    post = next((post for post in posts if post['id'] == post_id), None)
+
+    if post:
+        return jsonify(post), 200
+    else:
+        return jsonify({"error": f"Post with ID {post_id} not found."}), 404
 
 
 @app.route('/api/posts/<int:post_id>', methods=['DELETE'])
@@ -124,15 +143,17 @@ def delete_post(post_id):
         and is deleted.
         - A 404 Not Found error if no post with the given ID exists.
     """
+    posts = read_posts()
     # Find the post by ID
-    post_to_delete = next((post for post in POSTS if post['id'] == post_id), None)
+    post_to_delete = next((post for post in posts if post['id'] == post_id), None)
 
     if post_to_delete is None:
         # Return a 404 error, if no post is found
         return jsonify({"error": f"Post with id {post_id} not found."}), 404
 
     # Remove the post from the list
-    POSTS.remove(post_to_delete)
+    posts.remove(post_to_delete)
+    write_posts(posts)
 
     # Return a success message with a 200 OK status
     return jsonify({"message": f"Post with id {post_id} has been deleted successfully."}), 200
@@ -156,8 +177,9 @@ def update_post(post_id):
     """
     data = request.get_json()
 
+    posts = read_posts()
     # Find the post by id
-    post = next((post for post in POSTS if post['id'] == post_id), None)
+    post = next((post for post in posts if post['id'] == post_id), None)
     if not post:
         return jsonify({"error": f"Post with id {post_id} not found"}), 404
 
@@ -173,6 +195,8 @@ def update_post(post_id):
     post["content"] = data.get("content", post["content"])
     post["author"] = data.get("author", post["author"])
     post["date"] = data.get("date", post["date"])
+
+    write_posts(posts)
 
     return jsonify(post), 200
 

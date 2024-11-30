@@ -19,6 +19,8 @@ function loadPosts() {
     fetch(baseUrl + '/posts')
         .then(response => response.json())  // Parse the JSON data from the response
         .then(data => {  // Once the data is ready, we can use it
+            console.log("Posts fetched:", data); // Log to ensure we are getting the data
+
             // Clear out the post container first
             const postContainer = document.getElementById('post-container');
             postContainer.innerHTML = '';
@@ -32,7 +34,8 @@ function loadPosts() {
                     <p>${post.content}</p>
                     <p><b>Author</b> ${post.author}</p>
                     <p><b>Date:</b> ${post.date}</p>
-                <button onclick="deletePost(${post.id})">Delete</button>`;
+                    <button onclick="deletePost(${post.id})">Delete</button>
+                    <button onclick="editPost(${post.id})">Edit</button>`; // Edit button for future use
                 postContainer.appendChild(postDiv);
             });
         })
@@ -87,4 +90,66 @@ function deletePost(postId) {
         loadPosts(); // Reload the posts after deleting one
     })
     .catch(error => console.error('Error:', error));  // If an error occurs, log it to the console
+}
+
+// Function to populate the edit form with the current post data
+function editPost(postID) {
+    var baseUrl = document.getElementById('api-base-url').value;
+
+    // Use the Fetch API to get the specific post's data
+    fetch(baseUrl + '/posts/' + postID)
+        .then(response => response.json())
+        .then(post => {
+            // Populate the input fields with the current data
+            document.getElementById('update-title').value = post.title;
+            document.getElementById('update-content').value = post.content;
+            document.getElementById('update-author').value = post.author;
+            document.getElementById('update-date').value = post.date;
+            document.getElementById('update-post-id').value = post.id; // Set the postID in a hidden field
+
+            // Show the edit post form
+            document.getElementById('edit-post-container').style.display = 'block';
+            // Hide the posts list
+            document.getElementById('post-container').style.display = 'none';
+        })
+        .catch(error => console.error('Error:', error)); // If an error occurs, log it to the console
+}
+
+// Function to send a PUT request to the API to update the post
+function updatePost() {
+    var baseUrl = document.getElementById('api-base-url').value;
+    var postID = document.getElementById('update-post-id').value;
+    var postTitle = document.getElementById('update-title').value;
+    var postContent = document.getElementById('update-content').value;
+    var postAuthor = document.getElementById('update-author').value || "Unknown author";
+    var postDate = document.getElementById('update-date').value;
+
+    // Prepare the post payload
+    let updatedData = {
+        title: postTitle,
+        content: postContent,
+        author: postAuthor
+    };
+
+    // Include the date only if it's provided
+    if (postDate) {
+        updatedData.date = postDate;
+    }
+
+    // Use the Fetch API to send a PUT request to the /posts/:id endpoint
+    fetch(baseUrl + '/posts/' + postID, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+    })
+    .then(response => response.json()) // Parse the JSON data from the response
+    .then(post => {
+        console.log('Post updated:', post);
+        loadPosts(); // Reload the posts after updating
+
+        // Ensure the post list is visible again
+        document.getElementById('edit-post-container').style.display = 'none';
+        document.getElementById('post-container').style.display = 'block';
+    })
+    .catch(error => console.error('Error:', error)); // If an error occurs, log it to the console
 }
