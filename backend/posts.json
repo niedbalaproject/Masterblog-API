@@ -22,9 +22,9 @@
     },
     {
         "id": 5,
-        "title": "Another one",
-        "content": "New post with author and date",
-        "author": "Sara",
-        "date": "2023-06-21"
+        "title": "Updated Post Title",
+        "content": "This is the updated content of the post.",
+        "author": "Updated Author",
+        "date": "2024-11-30"
     }
 ]

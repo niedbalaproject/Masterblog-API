@@ -10,17 +10,23 @@
 <body>
     <div class="container">
         <h1>📚 Blog Posts</h1>
+
+        <!-- API Base URL Section -->
         <div class="input-field">
             <input type="text" id="api-base-url" placeholder="Enter API Base URL" value="http://127.0.0.1:5002/api">
             <button onclick="loadPosts()">Load Posts</button>
         </div>
-        <div class="input-field">
+
+        <!-- Add Post Section -->
+        <div class="input-field" id="add-post-container">
             <input type="text" id="post-title" placeholder="Enter Post Title">
             <input type="text" id="post-content" placeholder="Enter Post Content">
             <input type="text" id="post-author" placeholder="Enter Author Name">
             <input type="date" id="post-date"> <!-- Add the input for date -->
             <button onclick="addPost()">Add Post</button>
         </div>
+
+        <!-- Post Container -->
         <div id="post-container">
             <!-- Blog posts will be inserted here by JavaScript -->
         </div>
@@ -34,7 +40,7 @@
             <label for="update-content">Content:</label>
             <textarea id="update-content" name="content"></textarea><br>
 
-            <label for="update-content">Author:</label>
+            <label for="update-author">Author:</label>
             <input type="text" id="update-author" name="author"><br>
 
             <label for="update-date">Date:</label>

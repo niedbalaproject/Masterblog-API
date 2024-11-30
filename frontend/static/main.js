@@ -32,44 +32,47 @@ function loadPosts() {
                 postDiv.innerHTML = `
                     <h2>${post.title}</h2>
                     <p>${post.content}</p>
-                    <p><b>Author</b> ${post.author}</p>
+                    <p><b>Author:</b> ${post.author}</p>
                     <p><b>Date:</b> ${post.date}</p>
-                    <button onclick="deletePost(${post.id})">Delete</button>
-                    <button onclick="editPost(${post.id})">Edit</button>`; // Edit button for future use
+                    <div class="post-buttons">
+                        <button class="delete-btn" onclick="deletePost(${post.id})">Delete</button>
+                        <button class="edit-btn" onclick="editPost(${post.id})">Edit</button>
+                    </div>`;
                 postContainer.appendChild(postDiv);
             });
+
+            // Show the "Add Post" form again after posts are loaded
+            document.getElementById('add-post-container').style.display = 'block';
+            document.getElementById('edit-post-container').style.display = 'none';
+            document.getElementById('post-container').style.display = 'block';
         })
         .catch(error => console.error('Error:', error));  // If an error occurs, log it to the console
 }
 
 // Function to send a POST request to the API to add a new post
 function addPost() {
-    // Retrieve the values from the input fields
     var baseUrl = document.getElementById('api-base-url').value;
     var postTitle = document.getElementById('post-title').value;
     var postContent = document.getElementById('post-content').value;
     var postAuthor = document.getElementById('post-author').value || "Unknown author";
     var postDate = document.getElementById('post-date').value;
 
-    // Prepare the post payload
     let postPayload = {
         title: postTitle,
         content: postContent,
         author: postAuthor
     };
 
-    // Include the date only if it's provided
     if (postDate) {
         postPayload.date = postDate;
     }
 
-    // Use the Fetch API to send a POST request to the /posts endpoint
     fetch(baseUrl + '/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(postPayload)
     })
-    .then(response => response.json())  // Parse the JSON data from the response
+    .then(response => response.json())
     .then(post => {
         console.log('Post added:', post);
         loadPosts(); // Reload the posts after adding a new one
@@ -81,7 +84,6 @@ function addPost() {
 function deletePost(postId) {
     var baseUrl = document.getElementById('api-base-url').value;
 
-    // Use the Fetch API to send a DELETE request to the specific post's endpoint
     fetch(baseUrl + '/posts/' + postId, {
         method: 'DELETE'
     })
@@ -96,23 +98,21 @@ function deletePost(postId) {
 function editPost(postID) {
     var baseUrl = document.getElementById('api-base-url').value;
 
-    // Use the Fetch API to get the specific post's data
     fetch(baseUrl + '/posts/' + postID)
         .then(response => response.json())
         .then(post => {
-            // Populate the input fields with the current data
             document.getElementById('update-title').value = post.title;
             document.getElementById('update-content').value = post.content;
             document.getElementById('update-author').value = post.author;
             document.getElementById('update-date').value = post.date;
-            document.getElementById('update-post-id').value = post.id; // Set the postID in a hidden field
+            document.getElementById('update-post-id').value = post.id;
 
-            // Show the edit post form
+            // Hide the "Add Post" form and show the "Edit Post" form
+            document.getElementById('add-post-container').style.display = 'none';
             document.getElementById('edit-post-container').style.display = 'block';
-            // Hide the posts list
             document.getElementById('post-container').style.display = 'none';
         })
-        .catch(error => console.error('Error:', error)); // If an error occurs, log it to the console
+        .catch(error => console.error('Error:', error));
 }
 
 // Function to send a PUT request to the API to update the post
@@ -124,32 +124,32 @@ function updatePost() {
     var postAuthor = document.getElementById('update-author').value || "Unknown author";
     var postDate = document.getElementById('update-date').value;
 
-    // Prepare the post payload
     let updatedData = {
         title: postTitle,
         content: postContent,
         author: postAuthor
     };
 
-    // Include the date only if it's provided
     if (postDate) {
         updatedData.date = postDate;
     }
 
-    // Use the Fetch API to send a PUT request to the /posts/:id endpoint
     fetch(baseUrl + '/posts/' + postID, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedData)
     })
-    .then(response => response.json()) // Parse the JSON data from the response
+    .then(response => response.json())
     .then(post => {
         console.log('Post updated:', post);
         loadPosts(); // Reload the posts after updating
-
-        // Ensure the post list is visible again
-        document.getElementById('edit-post-container').style.display = 'none';
-        document.getElementById('post-container').style.display = 'block';
     })
-    .catch(error => console.error('Error:', error)); // If an error occurs, log it to the console
+    .catch(error => console.error('Error:', error));
+}
+
+// Function to cancel editing and go back to the main view
+function cancelEdit() {
+    document.getElementById('add-post-container').style.display = 'block';
+    document.getElementById('edit-post-container').style.display = 'none';
+    document.getElementById('post-container').style.display = 'block';
 }

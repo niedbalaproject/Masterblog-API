@@ -1,91 +1,173 @@
-* {
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
-}
-
+/* Base styles */
 body {
-    background-color: #f5f5f5;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f4f4f9;
     margin: 0;
-    padding: 20px 0;
-    height: 100vh;
+    padding: 0;
 }
 
+/* Container for the content */
 .container {
-    background-color: #fff;
     width: 80%;
+    margin: 0 auto;
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
-    margin: auto;
+    background-color: white;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Post form styles */
 .input-field {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
+    margin: 20px 0;
+    width: 80%;
 }
 
 .input-field input,
-.input-field button {
-    height: 40px;
+.input-field textarea {
+    width: 100%;
     padding: 10px;
+    margin: 5px 0;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.input-field button {
+    width: auto;
+    padding: 12px 20px;
+    background-color: #4CAF50;
+    color: white;
     font-size: 16px;
     border: none;
-    border-radius: 8px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    transition: box-shadow 0.5s ease;
-}
-
-.input-field input {
-    flex-grow: 1;
-    margin-right: 10px;
-}
-
-.input-field input::placeholder {
-    color: #aaa;
-}
-
-.input-field button {
-    background-color: #4466ee;
-    color: #fff;
+    border-radius: 5px;
     cursor: pointer;
+    margin-top: 10px;
 }
 
-.input-field button:hover {
-    background-color: #3355dd;
+.button-blue {
+    background-color: #00bcd4;
+    color: white;
+    font-size: 16px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.button-blue:hover {
+    background-color: #0097a7;
+}
+
+#post-container {
+    margin-top: 20px;
 }
 
 .post {
-    border-radius: 8px;
-    background-color: #f5f5f5;
-    margin-bottom: 20px;
+    background-color: #fff;
     padding: 20px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
     position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 120px;
+}
+
+.post-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.post .edit-btn {
+    background-color: #4CAF50;
+    color: white;
+    width: 100px;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+    font-size: 14px;
+}
+
+.post .delete-btn {
+    background-color: #F44336;
+    color: white;
+    width: 100px;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+    font-size: 14px;
+}
+
+#edit-post-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#edit-post-container input,
+#edit-post-container textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+/* Specific selector for "Update Post" button to ensure it's green */
+#edit-post-container button:first-of-type {
+    background-color: #4CAF50 !important;  /* Green for Update */
+    color: white !important;
+    min-width: 120px;  /* Ensure it doesn't collapse */
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    white-space: nowrap;  /* Prevent text wrapping */
+}
+
+#edit-post-container button:last-child {
+    background-color: #F44336;  /* Red for Cancel */
+    color: white;
+    min-width: 120px;  /* Same min-width for Cancel */
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    white-space: nowrap;  /* Prevent text wrapping */
+}
+
+.input-field input#api-base-url {
+    width: 70%;
 }
 
 .post h2 {
-    margin: 0;
-    color: #4466ee;
-    font-weight: 700;
+    font-size: 24px;
+    margin: 10px 0;
 }
 
 .post p {
-    margin: 10px 0 0;
-    color: #333;
+    font-size: 16px;
+    margin: 5px 0;
 }
 
-.post button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: #ff4444;
-    color: #fff;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
+.post b {
+    font-weight: bold;
 }
 
-.post button:hover {
-    background-color: #cc0000;
+.post .edit-btn {
+    order: 1;
+}
+
+.post .delete-btn {
+    order: 2;
 }
