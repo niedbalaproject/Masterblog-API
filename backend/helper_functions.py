@@ -5,27 +5,36 @@ import os
 POSTS_FILE = 'posts.json'
 
 
-# Function to read the posts from the JSON file
 def read_posts():
-    # If the file does not exist, return an empty list
+    """
+    Reads the list of posts from the JSON file.
+
+    Returns:
+        list: A list of posts loaded from the file, or an empty list if the file does not exist or
+              there is an error reading it.
+    """
     if not os.path.exists(POSTS_FILE):
         return []
 
     try:
         with open(POSTS_FILE, 'r') as f:
-            # Load the JSON data from the file
             return json.load(f)
     except (json.JSONDecodeError, IOError):
-        # If there's an error reading or decoding the file, return an empty list
         return []
 
 
-# Function to write posts to the JSON file
 def write_posts(posts):
+    """
+    Writes the list of posts to the JSON file.
+
+    Args:
+        posts (list): A list of post data to be saved to the file.
+
+    Raises:
+        Exception: If there is an error writing to the file.
+    """
     try:
         with open(POSTS_FILE, 'w') as f:
-            # Write the posts list as JSON data to the file
             json.dump(posts, f, indent=4)
     except IOError:
-        # If there's an error writing to the file, raise an exception
         raise Exception("Error writing to the posts file.")

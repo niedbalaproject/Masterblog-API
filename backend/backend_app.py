@@ -4,64 +4,61 @@ from datetime import datetime
 from helper_functions import read_posts, write_posts
 
 app = Flask(__name__)
-CORS(app)  # This will enable CORS for all routes
+CORS(app)  # Enable CORS for all routes
 
 
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
     """
-    Return the list of all blog posts, optionally sorted by title, content, author, or date.
+    Retrieve a list of all blog posts, optionally sorted by title, content, author, or date.
 
     Query parameters:
-        - sort: The field to sort by, can be "title", "content", "author", or "date".
+        - sort: The field to sort by (can be "title", "content", "author", or "date").
         - direction: The sort order, can be "asc" for ascending or "desc" for descending.
 
-    If no sort parameters are provided, the posts are returned in their original order.
+    Returns:
+        - A list of posts, sorted according to the query parameters, or in their original order if no sorting is specified.
     """
-
     posts = read_posts()
 
-    # Get the sort and direction parameters from the request
-    sort_field = request.args.get('sort', '').lower()  # default to empty string if not provided
+    sort_field = request.args.get('sort', '').lower()
     direction = request.args.get('direction', '').lower()
 
-    # Validate sort_field and direction
     if sort_field and sort_field not in ['title', 'content', 'author', 'date']:
         return jsonify({"error": "Invalid sort field. Must be 'title', 'content', 'author', or 'date'."}), 400
 
     if direction and direction not in ['asc', 'desc']:
         return jsonify({"error": "Invalid direction. Must be 'asc' or 'desc'."}), 400
 
-    # Sort the posts if sort and direction are provided
     if sort_field and direction:
         if sort_field == 'date':
             posts.sort(key=lambda post: datetime.strptime(post['date'], '%Y-%m-%d'), reverse=(direction == 'desc'))
         else:
             posts.sort(key=lambda post: post[sort_field].lower(), reverse=(direction == 'desc'))
 
-    # return the posts
     return jsonify(posts)
 
 
 @app.route('/api/posts/search', methods=['GET'])
 def search_posts():
     """
-    Searches for blog posts by title, content, author, and/or date based on query parameters.
+    Search for blog posts by title, content, author, and/or date based on query parameters.
+
     Query Parameters:
-        - title: The title to search for.
-        - content: The content to search for.
-        - author: The author to search for.
-        - date: The date to search for.
-    :return: A list of posts where the title, content, author, or date matches the search term.
+        - title: Title to search for.
+        - content: Content to search for.
+        - author: Author to search for.
+        - date: Date to search for.
+
+    Returns:
+        - A list of posts where title, content, author, or date matches the search term.
     """
     posts = read_posts()
-    # Get the search parameters from the request
-    title_query = request.args.get('title', '').lower()  # default to empty string if not provided
+    title_query = request.args.get('title', '').lower()
     content_query = request.args.get('content', '').lower()
     author_query = request.args.get('author', '').lower()
     date_query = request.args.get('date', '').lower()
 
-    # Filter posts based on title, content, author, or date
     filtered_posts = [
         post for post in posts
         if title_query in post['title'].lower() or
@@ -77,32 +74,31 @@ def search_posts():
 def add_post():
     """
     Add a new blog post.
-    Expects JSON input:
+
+    Expects JSON input in the format:
     {
         "title": "<title>",
         "content": "<content>",
         "author": "<author>",
     }
-    :return:
+
+    Returns:
         - A JSON object representing the newly added post with a unique ID.
         - A 400 Bad Request error if title or content is missing.
         - A 201 Created status code if the post is successfully added.
     """
     data = request.get_json()
 
-    # Check if the required fields are in the request
     title = data.get('title')
     content = data.get('content')
-    author = data.get('author', 'Unknown Author')  # Default to 'Unknown Author' if not provided
+    author = data.get('author', 'Unknown Author')
     date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
 
-    # Input validation
     if not title or not content:
         return jsonify({"error": "Missing required data: title, or content."}), 400
 
     posts = read_posts()
 
-    # Create the new post
     new_post = {
         "id": max(post["id"] for post in posts) + 1 if posts else 1,
         "title": title,
@@ -113,18 +109,23 @@ def add_post():
     posts.append(new_post)
     write_posts(posts)
 
-    # Return the new post with a 201 Created status
     return jsonify(new_post), 201
 
 
 @app.route('/api/posts/<int:post_id>', methods=['GET'])
 def get_single_post(post_id):
     """
-    Get a single blog post by its ID.
+    Retrieve a single blog post by its ID.
+
+    Args:
+        post_id (int): The ID of the post to retrieve.
+
+    Returns:
+        - The post with the specified ID if found.
+        - A 404 Not Found error if no post with the given ID exists.
     """
     posts = read_posts()
 
-    # Find the post by its ID
     post = next((post for post in posts if post['id'] == post_id), None)
 
     if post:
@@ -137,25 +138,23 @@ def get_single_post(post_id):
 def delete_post(post_id):
     """
     Delete a blog post by its ID.
-    :param post_id: (int): The ID of the new post to delete, provided in the URL.
-    :return:
-        - A JSON response with a success message and a 200 OK status if the post exists
-        and is deleted.
-        - A 404 Not Found error if no post with the given ID exists.
+
+    Args:
+        post_id (int): The ID of the post to delete.
+
+    Returns:
+        - A success message if the post is deleted.
+        - A 404 Not Found error if the post with the given ID does not exist.
     """
     posts = read_posts()
-    # Find the post by ID
     post_to_delete = next((post for post in posts if post['id'] == post_id), None)
 
     if post_to_delete is None:
-        # Return a 404 error, if no post is found
         return jsonify({"error": f"Post with id {post_id} not found."}), 404
 
-    # Remove the post from the list
     posts.remove(post_to_delete)
     write_posts(posts)
 
-    # Return a success message with a 200 OK status
     return jsonify({"message": f"Post with id {post_id} has been deleted successfully."}), 200
 
 
@@ -163,6 +162,7 @@ def delete_post(post_id):
 def update_post(post_id):
     """
     Update an existing blog post with new data.
+
     Expected JSON input:
     {
         "title": "<new_title>",
@@ -170,27 +170,25 @@ def update_post(post_id):
         "author": "<new author>",
         "date": "<new date>"  # Optional; must be in 'YYYY-MM-DD' format
     }
-    :return:
-        JSON object with the updated post details or an error message.
-        - Status 200 OK: Post updated successfully.
-        - Status 404 Not Found: If the post with the given ID does not exist.
+
+    Returns:
+        - The updated post details if the post is successfully updated.
+        - A 404 Not Found error if no post with the given ID exists.
+        - A 400 Bad Request error if the date format is incorrect.
     """
     data = request.get_json()
 
     posts = read_posts()
-    # Find the post by id
     post = next((post for post in posts if post['id'] == post_id), None)
     if not post:
         return jsonify({"error": f"Post with id {post_id} not found"}), 404
 
-    # Validate date format if provided
     if "date" in data:
         try:
             datetime.strptime(data["date"], '%Y-%m-%d')
         except ValueError:
-            return jsonify({"error": "Invalid date format. Use 'YYYY-MM-DD"}), 400
+            return jsonify({"error": "Invalid date format. Use 'YYYY-MM-DD'"}), 400
 
-    # Update the fields (retain current values if not provided)
     post["title"] = data.get("title", post["title"])
     post["content"] = data.get("content", post["content"])
     post["author"] = data.get("author", post["author"])
